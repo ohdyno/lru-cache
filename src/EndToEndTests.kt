@@ -26,15 +26,15 @@ class EndToEndTests {
         step("GET foo", "GOT 1")
         step("SET foo 1.1", "SET OK")
         step("GET foo", "GOT 1.1")
-        step("SET spam 2", "SET OK")
-        step("GET spam", "GOT 2")
-        step("SET ham third", "SET OK")
-        step("SET parrot four", "SET OK")
+        step("SET bar 2", "SET OK")
+        step("GET bar", "GOT 2")
+        step("SET turkey sandwich", "SET OK")
+        step("SET carrot four", "SET OK")
         step("GET foo", "NOTFOUND")
-        step("GET spam", "GOT 2")
-        step("GET ham", "GOT third")
-        step("GET ham parrot", "ERROR")
-        step("GET parrot", "GOT four")
+        step("GET bar", "GOT 2")
+        step("GET turkey", "GOT sandwich")
+        step("GET turkey carrot", "ERROR")
+        step("GET carrot", "GOT four")
         step("EXIT")
         cli.start()
         assertTrue(results.completed)
@@ -46,7 +46,7 @@ class EndToEndTests {
 
     private fun step(command: String, result: String) {
         commands.enqueue(command)
-        results.enqueue(result)
+        results.enqueue(command, result)
     }
 
     internal class ResultsQueue : Results {
@@ -59,16 +59,17 @@ class EndToEndTests {
         override fun add(result: String) {
             if (completed)
                 throw OutputAfterCompletionException()
-            assertEquals(result, expectedResults.poll())
+            val expected = expectedResults.poll()
+            assertEquals(result, expected.second, "Command: [${expected.first}]")
         }
 
-        private val expectedResults: Queue<String> = LinkedList()
+        private val expectedResults: Queue<Pair<String, String>> = LinkedList()
 
         var completed: Boolean = false
             get() = expectedResults.isEmpty() && field
 
-        fun enqueue(result: String) {
-            expectedResults.offer(result)
+        fun enqueue(command: String, result: String) {
+            expectedResults.offer(Pair(command, result))
         }
     }
 
@@ -83,6 +84,7 @@ class EndToEndTests {
             queue.offer(command)
         }
 
+        fun peek(): String = queue.peek()
     }
 
     internal class OutputAfterCompletionException : Throwable()
